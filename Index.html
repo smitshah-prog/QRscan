@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR to Sheets Tool</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Header */
+        .header { background: #007bff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 1.2rem; }
+        .icon-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+        /* Main Container */
+        .container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; overflow-y: auto; }
+
+        /* Scanner Box */
+        #reader { width: 100%; max-width: 500px; border-radius: 10px; overflow: hidden; background: #000; display: block;}
+        
+        /* Result Area */
+        #result-area { width: 100%; max-width: 500px; margin-top: 20px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; text-align: center; }
+        .scanned-text { font-size: 1.1rem; font-weight: bold; color: #333; word-break: break-all; margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+        
+        /* Buttons */
+        .btn-group { display: flex; gap: 10px; justify-content: center; }
+        button { padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+        .btn-send { background: #28a745; color: white; }
+        .btn-cancel { background: #dc3545; color: white; }
+        .btn-send:active { transform: scale(0.98); }
+
+        /* Settings Modal */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; padding: 20px; box-sizing: border-box; }
+        #settings-modal.open { transform: translateY(0); }
+        .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        .toggle-container { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; }
+        
+        /* Switch Slider */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2196F3; }
+        input:checked + .slider:before { transform: translateX(23px); }
+
+        /* Notification Toast */
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 25px; padding: 16px; position: fixed; z-index: 1001; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 17px; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Scan & Sync</h1>
+        <button class="icon-btn" onclick="toggleSettings()">&#9881;</button>
+    </div>
+
+    <div class="container">
+        <div id="reader"></div>
+
+        <div id="result-area">
+            <div>Scanned Data:</div>
+            <div class="scanned-text" id="scanned-content"></div>
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="resetScanner()">Cancel</button>
+                <button class="btn-send" onclick="manualSend()">Send Data</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal">
+        <div class="settings-header">
+            <h2>Settings</h2>
+            <button class="icon-btn" style="color:black;" onclick="toggleSettings()">&#10005;</button>
+        </div>
+        
+        <div class="form-group">
+            <label>Google Web App URL</label>
+            <input type="text" id="script-url" placeholder="Paste your script URL here...">
+            <small style="color:#666; display:block; margin-top:5px;">Paste the URL from your Google Apps Script Deployment.</small>
+        </div>
+
+        <div class="form-group">
+            <div class="toggle-container">
+                <label style="margin:0">Fast Mode (Instant Send)</label>
+                <label class="switch">
+                    <input type="checkbox" id="fast-mode">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <small style="color:#666; display:block; margin-top:5px;">If enabled, data sends immediately without confirmation.</small>
+        </div>
+
+        <button class="btn-send" style="width:100%" onclick="saveSettings()">Save Settings</button>
+    </div>
+
+    <div id="toast">Data Sent Successfully!</div>
+
+    <script>
+        // --- Variables ---
+        let html5QrcodeScanner;
+        let currentScannedText = "";
+        let isScanning = true;
+        
+        // --- Initialization ---
+        window.onload = function() {
+            loadSettings();
+            startScanner();
+        };
+
+        // --- Scanner Logic ---
+        function startScanner() {
+            document.getElementById('result-area').style.display = 'none';
+            document.getElementById('reader').style.display = 'block';
+            
+            // Check if instance exists, if not create one
+            if(!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5Qrcode("reader");
+            }
+
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
+            .catch(err => {
+                console.log("Camera error", err);
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    document.getElementById('reader').style.display = 'none';
+                }).catch(err => console.log(err));
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Prevent duplicate scans in short timeframe
+            if (!isScanning) return; 
+
+            const fastMode = document.getElementById('fast-mode').checked;
+            currentScannedText = decodedText;
+
+            if (fastMode) {
+                // Pause scanning briefly to prevent double scan of same code
+                html5QrcodeScanner.pause();
+                sendToGoogleSheet(decodedText, true); // True = auto resume
+            } else {
+                // Normal Mode
+                stopScanner();
+                isScanning = false;
+                document.getElementById('scanned-content').innerText = decodedText;
+                document.getElementById('result-area').style.display = 'block';
+            }
+        }
+
+        function resetScanner() {
+            currentScannedText = "";
+            isScanning = true;
+            startScanner();
+        }
+
+        // --- Sending Logic ---
+        function manualSend() {
+            sendToGoogleSheet(currentScannedText, false);
+        }
+
+        function sendToGoogleSheet(qrData, autoResume) {
+            const url = document.getElementById('script-url').value;
+
+            if (!url) {
+                showToast("Error: No Script URL in Settings");
+                if(!autoResume) resetScanner();
+                else html5QrcodeScanner.resume();
+                return;
+            }
+
+            // Provide immediate visual feedback if manual
+            if(!autoResume) {
+                document.querySelector('.btn-send').innerText = "Sending...";
+            } else {
+                showToast("Sending...");
+            }
+
+            // Using no-cors mode because Google Script doesn't return CORS headers easily.
+            // We won't get a readable JSON response, but the POST will succeed.
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ qrData: qrData })
+            })
+            .then(response => {
+                showToast("Data Saved to Sheet!");
+                if (autoResume) {
+                    setTimeout(() => html5QrcodeScanner.resume(), 1000); // Wait 1s before next scan
+                } else {
+                    document.querySelector('.btn-send').innerText = "Send Data";
+                    resetScanner();
+                }
+            })
+            .catch(error => {
+                showToast("Error Sending Data");
+                console.error('Error:', error);
+                if (autoResume) html5QrcodeScanner.resume();
+            });
+        }
+
+        // --- Settings & UI Logic ---
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('open');
+        }
+
+        function saveSettings() {
+            const url = document.getElementById('script-url').value;
+            const fastMode = document.getElementById('fast-mode').checked;
+            
+            localStorage.setItem('gsheet_url', url);
+            localStorage.setItem('fast_mode', fastMode);
+            
+            toggleSettings();
+            showToast("Settings Saved");
+        }
+
+        function loadSettings() {
+            const url = localStorage.getItem('gsheet_url');
+            const fastMode = localStorage.getItem('fast_mode');
+            
+            if (url) document.getElementById('script-url').value = url;
+            if (fastMode === 'true') document.getElementById('fast-mode').checked = true;
+        }
+
+        function showToast(message) {
+            var x = document.getElementById("toast");
+            x.innerText = message;
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+        }
+    </script>
+</body>
+</html>
