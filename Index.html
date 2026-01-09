@@ -11,27 +11,46 @@
         /* Header */
         .header { background: #007bff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 1.2rem; }
-        .header-icons { display: flex; gap: 15px; }
-        .icon-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; }
+        .header-controls { display: flex; align-items: center; gap: 15px; }
+        .icon-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; display: flex; align-items: center; }
+
+        /* Camera Toggle (Battery Saver) */
+        .cam-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .cam-switch input { opacity: 0; width: 0; height: 0; }
+        .cam-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .cam-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .cam-slider { background-color: #28a745; } /* Green when ON */
+        input:checked + .cam-slider:before { transform: translateX(20px); }
+        .cam-label { font-size: 0.8rem; margin-right: 5px; color: rgba(255,255,255,0.9); }
 
         /* Main Container */
         .container { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
 
         /* Scanner Box */
-        #reader { width: 100%; max-width: 500px; border-radius: 10px; overflow: hidden; background: #000; display: block; position: relative; }
+        #reader { width: 100%; max-width: 500px; border-radius: 10px; overflow: hidden; background: #000; min-height: 250px; position: relative; }
         
-        /* Queue Status Indicator */
-        #queue-status { 
-            display: none;
-            background-color: #ffc107; 
-            color: #333; 
-            padding: 8px 16px; 
-            border-radius: 20px; 
-            font-weight: bold; 
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        /* Camera Off Placeholder */
+        #camera-placeholder { display: none; width: 100%; max-width: 500px; height: 250px; background: #333; color: #fff; align-items: center; justify-content: center; border-radius: 10px; flex-direction: column; }
+        
+        /* Flashlight Button (Overlay) */
+        #torch-btn { 
+            display: none; 
+            position: absolute; 
+            bottom: 20px; 
+            right: 20px; 
+            background: rgba(0,0,0,0.5); 
+            color: white; 
+            border: 1px solid white; 
+            border-radius: 50%; 
+            width: 50px; 
+            height: 50px; 
+            font-size: 24px; 
+            z-index: 10; 
+            cursor: pointer;
         }
+
+        /* Queue Status */
+        #queue-status { display: none; background-color: #ffc107; color: #333; padding: 8px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; }
 
         /* Result Area */
         #result-area { width: 100%; max-width: 500px; margin-top: 20px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; text-align: center; }
@@ -42,47 +61,61 @@
         button { padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
         .btn-send { background: #28a745; color: white; }
         .btn-cancel { background: #dc3545; color: white; }
-        .btn-export { background: #6c757d; color: white; width: 100%; margin-top: 20px; }
+        .btn-blue { background: #007bff; color: white; }
+        .btn-grey { background: #6c757d; color: white; }
 
-        /* Settings Modal */
-        #settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        #settings-modal.open { transform: translateY(0); }
-        .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        /* Modals (Settings & History) */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; padding: 20px; box-sizing: border-box; overflow-y: auto; display: flex; flex-direction: column; }
+        .modal.open { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        /* History Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; font-size: 0.9rem; }
+        th { background-color: #f8f9fa; }
+        .empty-history { text-align: center; color: #777; margin-top: 30px; }
+
+        /* Form Elements */
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
         input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
         .toggle-container { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; }
-        
-        /* Switch Slider */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2196F3; }
-        input:checked + .slider:before { transform: translateX(23px); }
 
         /* Notification Toast */
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 25px; padding: 16px; position: fixed; z-index: 1001; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 17px; }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>Scan & Sync</h1>
-        <div class="header-icons">
-            <button id="torch-btn" class="icon-btn" style="display:none;" onclick="toggleTorch()">&#9889;</button>
-            <button class="icon-btn" onclick="toggleSettings()">&#9881;</button>
+        <div class="header-controls">
+            <div style="display:flex; align-items:center;">
+                <span class="cam-label">CAM</span>
+                <label class="cam-switch">
+                    <input type="checkbox" id="cam-power-toggle" checked onchange="toggleCameraPower()">
+                    <span class="cam-slider"></span>
+                </label>
+            </div>
+            <button class="icon-btn" onclick="openModal('settings-modal')">&#9881;</button>
         </div>
     </div>
 
     <div class="container">
         <div id="queue-status">⏳ Pending Uploads: 0</div>
 
-        <div id="reader"></div>
+        <div id="reader">
+            <button id="torch-btn" onclick="toggleTorch()">&#9889;</button>
+        </div>
+        
+        <div id="camera-placeholder">
+            <div style="font-size: 3rem; margin-bottom: 10px;">📷</div>
+            <div>Camera is Off</div>
+            <div style="font-size: 0.8rem; color: #aaa;">Tap 'CAM' top right to enable</div>
+        </div>
 
         <div id="result-area">
             <div>Scanned Data:</div>
@@ -94,10 +127,10 @@
         </div>
     </div>
 
-    <div id="settings-modal">
-        <div class="settings-header">
+    <div id="settings-modal" class="modal">
+        <div class="modal-header">
             <h2>Settings</h2>
-            <button class="icon-btn" style="color:black;" onclick="toggleSettings()">&#10005;</button>
+            <button class="icon-btn" style="color:black;" onclick="closeModal('settings-modal')">&#10005;</button>
         </div>
         
         <div class="form-group">
@@ -107,15 +140,15 @@
 
         <div class="form-group">
             <label>Device / User ID</label>
-            <input type="text" id="user-id" placeholder="e.g. Warehouse 1, Agent John">
+            <input type="text" id="user-id" placeholder="e.g. Warehouse 1">
         </div>
 
         <div class="form-group">
             <div class="toggle-container">
                 <label style="margin:0">Fast Mode (Continuous)</label>
-                <label class="switch">
+                <label class="cam-switch" style="width:50px; height:26px;">
                     <input type="checkbox" id="fast-mode">
-                    <span class="slider"></span>
+                    <span class="cam-slider" style="border-radius:34px;"></span>
                 </label>
             </div>
         </div>
@@ -125,9 +158,23 @@
         <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
         
         <div class="form-group">
-            <label>Local Backup</label>
-            <small style="color:#666;">Download a CSV file of all scans stored on this device.</small>
-            <button class="btn-export" onclick="exportCSV()">Download CSV Backup</button>
+            <label>Data Management</label>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-blue" style="flex:1" onclick="openHistoryModal()">View Data</button>
+                <button class="btn-grey" style="flex:1" onclick="exportCSV()">Download CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal">
+        <div class="modal-header">
+            <h2>Scan History</h2>
+            <button class="icon-btn" style="color:black;" onclick="closeModal('history-modal')">&#10005;</button>
+        </div>
+        <div id="history-content" style="flex:1; overflow-y:auto;">
+            </div>
+        <div style="padding-top:15px; border-top:1px solid #eee;">
+            <button class="btn-cancel" style="width:100%" onclick="clearHistory()">Clear History</button>
         </div>
     </div>
 
@@ -136,9 +183,9 @@
     <script>
         // --- Variables ---
         let html5QrcodeScanner;
-        let isScanning = true;
+        let isScanning = false;
         let scanQueue = [];
-        let scanHistory = []; // Keeps track of ALL scans for CSV backup
+        let scanHistory = []; 
         let isProcessingQueue = false;
         let isTorchOn = false;
         
@@ -146,91 +193,96 @@
         window.onload = function() {
             loadSettings();
             loadDataFromStorage();
-            startScanner();
+            // Start camera by default
+            startScanner(); 
             updateQueueUI();
         };
 
-        // --- Audio & Haptic ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function feedbackSuccess() {
-            // Sound: Short Beep
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            oscillator.type = "sine";
-            oscillator.frequency.value = 880; 
-            gainNode.gain.value = 0.1; 
-            oscillator.start();
-            setTimeout(() => oscillator.stop(), 100);
-
-            // Haptic: Short Tick (40ms) - "Small feedback"
-            if (navigator.vibrate) {
-                navigator.vibrate(40);
-            }
-        }
-
-        // --- Scanner Logic ---
+        // --- Camera & Torch Logic ---
         function startScanner() {
-            document.getElementById('result-area').style.display = 'none';
+            // UI Updates
+            document.getElementById('camera-placeholder').style.display = 'none';
             document.getElementById('reader').style.display = 'block';
-            
+            document.getElementById('result-area').style.display = 'none';
+            document.getElementById('cam-power-toggle').checked = true;
+
             if(!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5Qrcode("reader");
             }
 
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            // Start
             html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
             .then(() => {
-                // Check if torch is supported after camera starts
-                checkTorchCapability();
+                isScanning = true;
+                // Check capabilities AFTER start for correct Flashlight detection
+                const track = html5QrcodeScanner.getRunningTrackCameraCapabilities();
+                const torchBtn = document.getElementById('torch-btn');
+                
+                // Show torch button ONLY if supported
+                if (track && typeof track.torchFeature !== 'undefined') { // Generic check
+                     torchBtn.style.display = 'block';
+                } else {
+                     // Some browsers hide it deep, we can try to force show it and see if it fails gracefully
+                     // For now, we hide if not explicitly reported.
+                     torchBtn.style.display = 'none';
+                }
             })
-            .catch(err => console.log("Camera error", err));
+            .catch(err => {
+                console.log("Camera Start Error", err);
+                showToast("Camera Error: " + err);
+            });
         }
 
-        // --- Flashlight/Torch Logic ---
-        function checkTorchCapability() {
-            const track = html5QrcodeScanner.getRunningTrackCameraCapabilities();
-            const torchBtn = document.getElementById('torch-btn');
-            // If the device reports it has a torch feature
-            if (track && track.torchFeature && track.torchFeature.isSupported()) {
-                torchBtn.style.display = 'block';
+        function stopScanner() {
+            if (html5QrcodeScanner && isScanning) {
+                html5QrcodeScanner.stop().then(() => {
+                    isScanning = false;
+                    document.getElementById('reader').style.display = 'none';
+                    document.getElementById('camera-placeholder').style.display = 'flex';
+                    document.getElementById('torch-btn').style.display = 'none';
+                    isTorchOn = false;
+                }).catch(err => console.log(err));
+            }
+        }
+
+        function toggleCameraPower() {
+            const toggle = document.getElementById('cam-power-toggle');
+            if (toggle.checked) {
+                startScanner();
             } else {
-                torchBtn.style.display = 'none';
+                stopScanner();
             }
         }
 
         function toggleTorch() {
-            if (!html5QrcodeScanner) return;
+            if (!isScanning) return;
             
             isTorchOn = !isTorchOn;
             html5QrcodeScanner.applyVideoConstraints({
                 advanced: [{ torch: isTorchOn }]
             })
-            .then(() => {
-                document.getElementById('torch-btn').style.color = isTorchOn ? '#ffc107' : 'white';
-            })
             .catch(err => {
-                console.log(err);
-                isTorchOn = !isTorchOn; // Revert state if failed
+                console.log("Torch Error", err);
+                isTorchOn = !isTorchOn; // Revert
+                showToast("Flashlight not supported");
             });
         }
 
+        // --- Scan Logic ---
         let lastScanTime = 0;
         let lastScannedText = "";
 
         function onScanSuccess(decodedText, decodedResult) {
             const now = Date.now();
-            // Prevent duplicate scan within 2 seconds
             if (decodedText === lastScannedText && (now - lastScanTime) < 2000) return;
 
             lastScannedText = decodedText;
             lastScanTime = now;
             
             feedbackSuccess();
-            saveToHistory(decodedText); // Save for CSV backup
+            saveToHistory(decodedText);
 
             const fastMode = document.getElementById('fast-mode').checked;
 
@@ -251,17 +303,30 @@
             html5QrcodeScanner.resume();
         }
 
-        // --- Persistent Queue & Storage Logic ---
+        // --- Feedback ---
+        function feedbackSuccess() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = 880; 
+            gainNode.gain.value = 0.1; 
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), 100);
+
+            if (navigator.vibrate) navigator.vibrate(40);
+        }
+
+        // --- Queue & History ---
         function loadDataFromStorage() {
-            // Load Queue
             const storedQueue = localStorage.getItem('scan_queue');
             if (storedQueue) scanQueue = JSON.parse(storedQueue);
             
-            // Load History
             const storedHistory = localStorage.getItem('scan_history');
             if (storedHistory) scanHistory = JSON.parse(storedHistory);
             
-            // Start processing if items exist
             if (scanQueue.length > 0) processQueue();
         }
 
@@ -270,21 +335,54 @@
             const item = { qrData: qrData, userID: userID, timestamp: new Date().toISOString() };
             
             scanQueue.push(item);
-            localStorage.setItem('scan_queue', JSON.stringify(scanQueue)); // Save to storage
-            
+            localStorage.setItem('scan_queue', JSON.stringify(scanQueue));
             updateQueueUI();
             processQueue();
         }
 
         function saveToHistory(qrData) {
             const userID = document.getElementById('user-id').value || "Unknown";
+            // Format nice time string
+            const date = new Date();
+            const timeStr = date.getHours().toString().padStart(2,'0') + ":" + date.getMinutes().toString().padStart(2,'0');
+            
             const item = { 
-                scanTime: new Date().toLocaleString(), 
+                time: timeStr, 
+                fullDate: date.toLocaleString(),
                 qrData: qrData, 
                 user: userID 
             };
-            scanHistory.push(item);
+            // Add to FRONT of array
+            scanHistory.unshift(item);
             localStorage.setItem('scan_history', JSON.stringify(scanHistory));
+        }
+
+        function processQueue() {
+            if (isProcessingQueue || scanQueue.length === 0) return;
+
+            isProcessingQueue = true;
+            const item = scanQueue[0];
+            const url = document.getElementById('script-url').value;
+
+            if(!url) { isProcessingQueue = false; return; }
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            })
+            .then(() => {
+                scanQueue.shift();
+                localStorage.setItem('scan_queue', JSON.stringify(scanQueue));
+                updateQueueUI();
+                isProcessingQueue = false;
+                processQueue();
+            })
+            .catch(err => {
+                isProcessingQueue = false;
+                setTimeout(processQueue, 5000);
+            });
         }
 
         function updateQueueUI() {
@@ -297,58 +395,58 @@
             }
         }
 
-        function processQueue() {
-            if (isProcessingQueue || scanQueue.length === 0) return;
-
-            isProcessingQueue = true;
-            const item = scanQueue[0]; // Peek first item
-            const url = document.getElementById('script-url').value;
-
-            if(!url) { isProcessingQueue = false; return; }
-
-            fetch(url, {
-                method: 'POST',
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            })
-            .then(() => {
-                // Success: Remove from queue and save storage
-                scanQueue.shift();
-                localStorage.setItem('scan_queue', JSON.stringify(scanQueue));
-                
-                updateQueueUI();
-                isProcessingQueue = false;
-                processQueue(); // Next!
-            })
-            .catch(err => {
-                console.error("Upload failed", err);
-                isProcessingQueue = false;
-                setTimeout(processQueue, 5000); // Retry in 5s
-            });
-        }
-
-        // --- Manual Send ---
         function manualSend() {
             const qrData = document.getElementById('scanned-content').innerText;
-            addToQueue(qrData); // We re-use queue logic for reliability
+            addToQueue(qrData);
             resetScanner();
             showToast("Added to Queue");
         }
 
-        // --- CSV Export ---
-        function exportCSV() {
-            if (scanHistory.length === 0) {
-                alert("No scan history found.");
+        // --- Modals & Views ---
+        function openModal(id) {
+            document.getElementById(id).classList.add('open');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        function openHistoryModal() {
+            // First close settings
+            closeModal('settings-modal');
+            openModal('history-modal');
+            
+            const container = document.getElementById('history-content');
+            if(scanHistory.length === 0) {
+                container.innerHTML = '<div class="empty-history">No scans yet.</div>';
                 return;
             }
-            
-            let csvContent = "data:text/csv;charset=utf-8,Time,User,QR_Data\n";
-            
-            scanHistory.forEach(row => {
-                csvContent += `${row.scanTime},${row.user},${row.qrData}\n`;
-            });
 
+            let html = '<table><thead><tr><th>Time</th><th>User</th><th>Data</th></tr></thead><tbody>';
+            scanHistory.forEach(row => {
+                html += `<tr>
+                    <td style="white-space:nowrap;">${row.time}</td>
+                    <td>${row.user}</td>
+                    <td style="word-break:break-all;">${row.qrData}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function clearHistory() {
+            if(confirm("Clear local history? This does not delete data from Google Sheets.")) {
+                scanHistory = [];
+                localStorage.setItem('scan_history', JSON.stringify([]));
+                openHistoryModal(); // Refresh view
+            }
+        }
+
+        function exportCSV() {
+            if (scanHistory.length === 0) { alert("No scan history found."); return; }
+            let csvContent = "data:text/csv;charset=utf-8,DateTime,User,QR_Data\n";
+            scanHistory.forEach(row => {
+                csvContent += `${row.fullDate},${row.user},${row.qrData}\n`;
+            });
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -358,11 +456,7 @@
             document.body.removeChild(link);
         }
 
-        // --- Settings ---
-        function toggleSettings() {
-            document.getElementById('settings-modal').classList.toggle('open');
-        }
-
+        // --- Settings Persist ---
         function saveSettings() {
             const url = document.getElementById('script-url').value;
             const fastMode = document.getElementById('fast-mode').checked;
@@ -372,7 +466,7 @@
             localStorage.setItem('fast_mode', fastMode);
             localStorage.setItem('user_id', userId);
             
-            toggleSettings();
+            closeModal('settings-modal');
             showToast("Settings Saved");
         }
 
